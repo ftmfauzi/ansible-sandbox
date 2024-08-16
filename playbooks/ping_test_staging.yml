@@ -1,0 +1,21 @@
+---
+- name: Test connectivity to all servers staging
+  hosts: localhost
+  gather_facts: false
+  vars:
+    subnet: 10.200.47.
+    ip_range: "{{ range(1, 6) | list }}"  # IP range from .1 to .254
+
+  tasks:
+    - name: Ping IPs in subnet 10.200.47.0/24
+      ansible.builtin.command:
+        cmd: "ping -c 1 {{ subnet }}{{ item }}"
+      register: ping_result
+      ignore_errors: yes
+      no_log: false
+      loop: "{{ ip_range }}"
+
+    - name: Ping Results for subnet 10.200.47.0/24
+      ansible.builtin.debug:
+        msg: "{{ 'reachable' if item.rc == 0 else 'unreachable' }}"
+      loop: "{{ ping_result.results }}"
