@@ -1,0 +1,5 @@
+- name: Install Nginx Exporter
+  hosts: nginx_exporter_servers
+  become: yes
+  roles:
+    - nginx_exporter

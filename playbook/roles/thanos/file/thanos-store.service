@@ -1,0 +1,17 @@
+[Unit]
+Description=Thanos Store
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Group=root
+Type=simple
+ExecStart=/usr/local/bin/thanos store \
+       --data-dir=/var/lib/thanos-store/ \
+       --objstore.config-file=/etc/thanos/gcs.yml \
+       --http-address=0.0.0.0:10906 \
+       --grpc-address=0.0.0.0:10905
+
+[Install]
+WantedBy=multi-user.target

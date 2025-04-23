@@ -1,0 +1,22 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname']
+  group_wait: 10s
+  group_interval: 5m
+  repeat_interval: 3h
+  receiver: 'telegram'
+
+receivers:
+- name: 'telegram'
+  telegram_configs:
+  - bot_token: <{{ telegram_bot_token }}>
+    chat_id: <{{ telegram_chat_id }}>
+    message_thread_id: <{{ telegram_message_thread_id }}>
+    send_resolved: true
+    parse_mode: 'Markdown'
+
+templates:
+  - '/etc/alertmanager/templates/alert.tmpl'
+

@@ -1,0 +1,94 @@
+- name: Set Alertmanager version and arch based on OS
+  set_fact:
+    # version: "2.53.3"
+    version: "0.28.1"
+    arch: "linux-amd64"
+
+- name: Create Alertmanager user
+  user:
+    name: alertmanager
+    system: yes
+    shell: /sbin/nologin
+    create_home: no
+
+- name: Download Alertmanager
+  get_url:
+    url: "https://github.com/prometheus/alertmanager/releases/download/v{{version}}/alertmanager-{{version}}.{{ arch }}.tar.gz"
+    dest: "/tmp/alertmanager-{{version}}.{{ arch }}.tar.gz"
+
+- name: Extract Alertmanager
+  ansible.builtin.unarchive:
+    src: "/tmp/alertmanager-{{version}}.{{ arch }}.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+
+- name: Move Alertmanager binaries
+  copy:
+    src: "/tmp/alertmanager-{{ version }}.{{ arch }}/alertmanager"
+    dest: "/usr/local/bin/alertmanager"
+    mode: '0755'
+    remote_src: yes
+
+- name: Create Alertmanager configuration directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: alertmanager
+    group: alertmanager
+    mode: "0755"
+  loop:
+    - /etc/alertmanager
+    - /etc/alertmanager/templates
+    - /var/lib/alertmanager
+    - /etc/prometheus/rules.d
+
+# - name: Create Alertmanager configuration directory
+#   file:
+#     path: "/etc/alertmanager"
+#     state: directory
+#     owner: alertmanager
+#     group: alertmanager
+
+# - name: Create Alertmanager templates directory
+#   file:
+#     path: "/etc/alertmanager/templates"
+#     state: directory
+#     owner: alertmanager
+#     group: alertmanager
+
+# - name: Create Alertmanager data directory
+#   file:
+#     path: "/var/lib/alertmanager"
+#     state: directory
+#     owner: alertmanager
+#     group: alertmanager
+
+- name: Copy Alertmanager config
+  template:
+    src: templates/alertmanager.yml.j2
+    dest: /etc/alertmanager/alertmanager.yml
+    mode: '0644'
+
+- name: Copy Alert Template
+  copy:
+    src: files/alert.tmpl
+    dest: /etc/alertmanager/templates/alert.tmpl
+    mode: "0644"
+
+- name: Copy Alertmanager service file
+  copy:
+    src: files/alertmanager.service
+    dest: /etc/systemd/system/alertmanager.service
+    mode: '0644'
+
+- name: Copy Rules file
+  copy:
+    src: files/rules.d/node-rules.yml
+    dest: /etc/prometheus/rules.d/node-rules.yml
+    mode: '0644'
+
+- name: Start Alertmanager service
+  systemd:
+    name: alertmanager
+    enabled: yes
+    state: started

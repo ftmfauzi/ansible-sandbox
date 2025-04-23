@@ -1,0 +1,13 @@
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Restart Thanos services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - thanos-query
+    - thanos-sidecar
+    - thanos-store
+    - thanos-compactor

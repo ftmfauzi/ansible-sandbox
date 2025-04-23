@@ -1,0 +1,24 @@
+{{ define "telegram.default.message" }}
+  {{ if eq .Status "firing" }}
+    🔥 *Alert Firing* 🔥
+  {{ else if eq .Status "resolved" }}
+    ✅ *Alert Resolved* ✅
+  {{ end }}
+  🏷 *Labels:*{{ range $key, $val := .GroupLabels }} 
+    - *{{$key}}* = `{{$val}}`
+  {{ end }}
+  🗒️ *Instance Details:*{{ range $alert := .Alerts }}
+    - *Instance = * `{{ index $alert.Labels "instance" }}`
+    - *Alias = * `{{ index $alert.Labels "alias" }}`
+    - *Job = * `{{ index $alert.Labels "job" }}`
+    - *Severity = * `{{ index $alert.Labels "severity" }}`
+    - *Time = * `{{ $alert.StartsAt | date "2006-01-02 15:04:05" }} UTC`
+  {{ end }}
+  📝 *Annotations:*{{ range $alert := .Alerts }}
+    - *Description = * `{{ index $alert.Annotations "description" }}`
+    - *Summary = * `{{ index $alert.Annotations "summary" }}`
+  {{ end }}
+  🔗 *Source:* [Prometheus Dashboard]({{ .ExternalURL }}) {{ if eq .Status "firing" }}
+    📊[View Graph Here](https://prometheus.id/alerts)
+  {{ end }}
+{{ end }}

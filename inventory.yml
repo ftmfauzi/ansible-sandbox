@@ -1,0 +1,36 @@
+all:
+  vars:
+    ansible_python_interpreter: auto
+  hosts:
+    prometheus_server:
+      ansible_host: 192.XX.XX.XX
+      ansible_user: someuser
+
+  children:
+    ## Node Alertmanager server
+    alertmanager_server:
+      hosts:
+        alertmanager1:
+          ansible_host: 192.XX.XX.27
+          ansible_user: someuser
+
+    # Node Exporter servers
+    node_exporter_servers:
+      hosts:
+        node1:
+          ansible_host: 192.XX.XX.XX
+          ansible_user: someuser
+        node2:
+          ansible_host: 192.XX.XX.XX
+          ansible_user: someuser
+        node3:
+          ansible_host: 192.XX.XX.XX
+          ansible_user: someuser
+
+
+    # Nginx Exporter servers
+    nginx_exporter_servers:
+      hosts:
+        nginx-lb:
+          ansible_host: 192.XX.XX.XX
+          ansible_user: someuser

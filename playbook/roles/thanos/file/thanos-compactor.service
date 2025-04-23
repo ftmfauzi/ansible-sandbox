@@ -1,0 +1,19 @@
+[Unit]
+Description=Thanos Compactor
+After=network-online.target
+
+[Service]
+User=prometheus
+Group=prometheus
+ExecStart=/usr/local/bin/thanos compact \
+  --data-dir=/var/lib/thanos-compactor \
+  --objstore.config-file=/etc/thanos/gcs.yml \
+  --http-address=0.0.0.0:19191 \
+  #--retention.resolution-raw=30d \
+  #--retention.resolution-5m=90d \
+  #--retention.resolution-1h=180d \
+  --wait
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+- name: Install Alertmanager
+  hosts: alertmanager_server
+  become: yes
+  vars_files:
+    - group_vars/alertmanager_server.yml
+  roles:
+    - alertmanager

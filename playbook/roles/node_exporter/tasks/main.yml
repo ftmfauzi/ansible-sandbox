@@ -1,0 +1,60 @@
+- name: Set Node Exporter version and arch based on OS
+  set_fact:
+    version: "1.9.0"
+    arch: "linux-amd64"
+    # arch: "{{ 'linux-amd64' if ansible_os_family == 'Debian' else 'linux-arm64' }}"
+
+- name: Set systemd path based on OS
+  set_fact:
+    systemd_path: "{{ '/etc/systemd/system/' if ansible_os_family == 'Debian' else '/usr/lib/systemd/system/' }}"
+
+- name: Create Node Exporter user
+  user:
+    name: node_exporter
+    system: yes
+    shell: /sbin/nologin
+    create_home: no
+
+- name: Download and extract Node Exporter
+  get_url:
+    url: "https://github.com/prometheus/node_exporter/releases/download/v{{version}}/node_exporter-{{version}}.{{ arch }}.tar.gz"
+    dest: "/tmp/node_exporter-{{version}}.{{ arch }}.tar.gz"
+
+- name: Extract Node Exporter archive
+  unarchive:
+    src: "/tmp/node_exporter-{{version}}.{{ arch }}.tar.gz"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Copy Node Exporter systemd service file
+  copy:
+    src: node_exporter.service
+    dest: "{{ systemd_path }}/node_exporter.service"
+    owner: node_exporter
+    group: node_exporter
+    mode: '0644'
+
+- name: Reload systemd and enable Node Exporter service
+  systemd:
+    daemon_reload: yes
+    name: node_exporter
+    enabled: yes
+    state: started
+
+- name: Verify Node Exporter is running
+  uri:
+    url: http://localhost:9100/metrics
+    method: GET
+    status_code: 200
+  register: node_exporter_status
+  ignore_errors: yes
+
+# - name: Check Node Exporter with curl
+#   command: curl -s http://localhost:9100/metrics | grep promhttp_metric_handler_requests_total
+#   register: node_exporter_curl
+#   ignore_errors: yes
+
+# - name: Show Node Exporter output
+#   debug:
+#     var: node_exporter_curl.stdout

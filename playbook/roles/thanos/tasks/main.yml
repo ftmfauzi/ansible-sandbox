@@ -1,0 +1,90 @@
+---
+- name: Set Thanos version and arch based on OS
+  set_fact:
+    # version: "2.53.3"
+    version: "0.37.2"
+    arch: "linux-amd64"
+
+- name: Ensure required directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: prometheus
+    group: prometheus
+    mode: '0755'
+  loop:
+    - /var/lib/prometheus/thanos/
+    - /var/lib/thanos-store/
+    - /var/lib/thanos-compactor/
+    - /etc/thanos/
+
+- name: Download Thanos
+  get_url:
+    url: "https://github.com/thanos-io/thanos/releases/download/v{{version}}/thanos-{{version}}.{{ arch }}.tar.gz"
+    dest: "/tmp/thanos-{{version}}.{{ arch }}.tar.gz"
+    
+- name: Extract Thanos archive
+  unarchive:
+    src: "/tmp/thanos-{{version}}.{{ arch }}.tar.gz"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+
+- name: Copy systemd service files
+  copy:
+    src: "file/{{ item.src }}"
+    dest: "/etc/systemd/system/{{ item.dest }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - { src: "thanos-query.service", dest: "thanos-query.service" }
+    - { src: "thanos-sidecar.service", dest: "thanos-sidecar.service" }
+    - { src: "thanos-store.service", dest: "thanos-store.service" }
+    - { src: "thanos-compactor.service", dest: "thanos-compactor.service" }
+  notify: Reload systemd
+
+- name: Deploy GCS configuration template
+  template:
+    src: templates/gcs.yml.j2
+    dest: /etc/thanos/gcs.yml
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: Restart Thanos services
+
+- name: Deploy Thanos shipper configuration
+  template:
+    src: templates/thanos.shipper.json.j2
+    dest: /var/lib/prometheus/thanos.shipper.json
+    owner: prometheus
+    group: prometheus
+    mode: '0644'
+  notify: Restart Thanos services
+
+- name: Enable and start Thanos services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  loop:
+    - thanos-query
+    - thanos-sidecar
+    - thanos-store
+    - thanos-compactor
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes
+
+- name: Restart Thanos services
+  systemd:
+    name: "{{ item }}"
+    state: restarted
+  loop:
+    - thanos-query
+    - thanos-sidecar
+    - thanos-store
+    - thanos-compactor

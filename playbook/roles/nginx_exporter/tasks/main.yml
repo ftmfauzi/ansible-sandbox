@@ -1,0 +1,73 @@
+- name: Set Nginx Exporter version and arch based on OS
+  set_fact:
+    version: "1.4.1"
+    arch: "linux_amd64"
+    # arch: "{{ 'linux_amd64' if ansible_os_family == 'Debian' else 'linux_arm64' }}"
+
+- name: Set systemd path based on OS
+  set_fact:
+    systemd_path: "{{ '/etc/systemd/system/' if ansible_os_family == 'Debian' else '/usr/lib/systemd/system/' }}"
+
+- name: Create Nginx Exporter user
+  user:
+    name: nginx_exporter
+    system: yes
+    shell: /sbin/nologin
+    create_home: no
+
+- name: Download and extract Nginx Exporter
+  get_url:
+    url: "https://github.com/nginx/nginx-prometheus-exporter/releases/download/v{{version}}/nginx-prometheus-exporter_{{version}}_{{ arch }}.tar.gz"
+    dest: "/tmp/nginx-prometheus-exporter_{{version}}_{{ arch }}.tar.gz"
+
+- name: Extract Nginx Exporter archive
+  unarchive:
+    src: "/tmp/nginx-prometheus-exporter_{{version}}_{{ arch }}.tar.gz"
+    dest: "/tmp/"
+    remote_src: yes
+
+- name: Move Nginx Exporter binaries
+  copy:
+    src: "/tmp/nginx-prometheus-exporter"
+    dest: "/usr/local/bin/nginx-prometheus-exporter"
+    mode: '0755'
+    remote_src: yes
+
+- name: Copy Nginx Exporter systemd service file
+  copy:
+    src: nginx_prometheus_exporter.service
+    dest: "{{ systemd_path }}/nginx_prometheus_exporter.service"
+    owner: nginx_exporter
+    group: nginx_exporter
+    mode: '0644'
+
+- name: Copy nginx-status.conf
+  copy:
+    src: files/nginx-status.conf
+    dest: /etc/nginx/sites-enabled/nginx-status.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload NGINX
+
+- name: Test NGINX config syntax
+  command: nginx -t
+  register: nginx_syntax_check
+  changed_when: false
+  failed_when: nginx_syntax_check.rc != 0
+
+- name: Reload systemd and enable Nginx Exporter service
+  systemd:
+    daemon_reload: yes
+    name: nginx_prometheus_exporter
+    enabled: yes
+    state: started
+
+- name: Verify Nginx Exporter is running
+  uri:
+    url: http://localhost:9113/metrics
+    method: GET
+    status_code: 200
+  register: nginx_prometheus_exporter_status
+  ignore_errors: yes
+

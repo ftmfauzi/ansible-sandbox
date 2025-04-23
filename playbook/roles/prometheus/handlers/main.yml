@@ -1,0 +1,8 @@
+- name: Restart Prometheus
+  debug:
+    msg: "Restarting Prometheus service..."
+- name: Restart Prometheus Service
+  systemd:
+    name: prometheus
+    state: restarted
+    enabled: yes
