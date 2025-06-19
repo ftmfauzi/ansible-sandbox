@@ -1,0 +1,32 @@
+- name: Set MongoDB version and arch based on OS
+  set_fact:
+    version: "8.0.10"
+    arch: "linux-amd64"
+    # arch: "{{ 'linux-amd64' if ansible_os_family == 'Debian' else 'linux-arm64' }}"
+
+- name: Add MongoDB GPG key
+  ansible.builtin.apt_key:
+    url: https://pgp.mongodb.com/server-8.0.asc
+    state: present
+
+- name: Add MongoDB 8.0 APT repository
+  ansible.builtin.apt_repository:
+    repo: "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse"
+    state: present
+    filename: mongodb-org-8.0
+
+- name: Update APT cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install MongoDB 8.0
+  ansible.builtin.apt:
+    name: mongodb-org
+    state: present
+
+- name: Enable and start MongoDB
+  ansible.builtin.systemd:
+    name: mongod
+    enabled: yes
+    state: started

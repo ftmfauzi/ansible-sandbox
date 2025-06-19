@@ -1,0 +1,9 @@
+auth_modules:
+  postgres: # Set this to any name you want
+    type: userpass
+    userpass:
+      username: postgres_exporter
+      password: nKbqk5ultijds2k25DFuFw3
+    options:
+      # options become key=value parameters of the DSN
+      sslmode: disable

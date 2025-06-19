@@ -82,6 +82,30 @@
     mode: '0644'
   notify: Restart Prometheus
 
+
+- name: Check Prometheus config
+  command: promtool check config /etc/prometheus/prometheus.yml
+  register: promtool_check
+  failed_when: promtool_check.rc != 0
+  changed_when: false
+
+- name: Reload Prometheus using HUP signal
+  shell: |
+    PID=$(pidof prometheus)
+    kill -HUP $PID
+  when: promtool_check.rc == 0
+
+- name: Check Prometheus service status
+  systemd:
+    name: prometheus
+    enabled: yes
+    state: started
+  register: prometheus_status
+
+- name: Show Prometheus status info
+  debug:
+    var: prometheus_status
+
 - name: systemd reload
   systemd:
     daemon_reload: yes

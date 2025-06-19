@@ -2,35 +2,95 @@ all:
   vars:
     ansible_python_interpreter: auto
   hosts:
+    # Node Prometheus server
+    # prometheus_server:
+    #   ansible_host: 10.200.61.26
+    #   ansible_user: jds
     prometheus_server:
-      ansible_host: 192.XX.XX.XX
-      ansible_user: someuser
+      ansible_host: 10.200.61.27
+      ansible_user: jds
+
+    # alertmanager_server:
+    #   ansible_host: 10.200.61.27
+    #   ansible_user: jds
 
   children:
     ## Node Alertmanager server
     alertmanager_server:
       hosts:
         alertmanager1:
-          ansible_host: 192.XX.XX.27
-          ansible_user: someuser
+          ansible_host: 10.200.61.27
+          ansible_user: jds
 
     # Node Exporter servers
     node_exporter_servers:
       hosts:
-        node1:
-          ansible_host: 192.XX.XX.XX
-          ansible_user: someuser
-        node2:
-          ansible_host: 192.XX.XX.XX
-          ansible_user: someuser
-        node3:
-          ansible_host: 192.XX.XX.XX
-          ansible_user: someuser
-
+        # node1:
+        #   ansible_host: 10.200.61.26
+        #   ansible_user: jds
+        # node2:
+        #   ansible_host: 10.0.20.29
+        #   ansible_user: opendata
+        # node3:
+        #   ansible_host: 10.0.20.34
+        #   ansible_user: data
+        # node4:
+        #   ansible_host: 192.168.168.136
+        #   ansible_user: opendata
+        #   ansible_password: "OpendatajBr"
+        #   ansible_connection: ssh
+        #   ansible_ssh_common_args: '-o PreferredAuthentications=password -o PubkeyAuthentication=no'
+        # node5:
+        #   ansible_host: 192.168.168.127
+        #   ansible_user: ubuntu
+        # node6:
+        #   ansible_host: 10.200.61.15
+        #   ansible_user: ubuntu
+        # node7:
+        #   ansible_host: 10.200.61.16
+        #   ansible_user: ubuntu
+        # node8:
+        #   ansible_host: 10.200.61.27
+        #   ansible_user: jds
+        # node9:
+        #   ansible_host: 10.201.47.81
+        #   ansible_user: jds
+        node10:
+          ansible_host: 10.202.47.110
+          ansible_user: ubuntu
+        node11:
+          ansible_host: 10.202.47.111
+          ansible_user: ubuntu
+        node12:
+          ansible_host: 10.202.47.112
+          ansible_user: ubuntu
+        node13:
+          ansible_host: 10.202.47.114
+          ansible_user: ubuntu
 
     # Nginx Exporter servers
     nginx_exporter_servers:
       hosts:
-        nginx-lb:
-          ansible_host: 192.XX.XX.XX
-          ansible_user: someuser
+        # nginx-34:
+        #   ansible_host: 10.0.20.34
+        #   ansible_user: data
+
+        nginx-15:
+          ansible_host: 10.200.61.15
+          ansible_user: ubuntu
+    
+    # Postgres servers
+    postgres_servers:
+       hosts:
+        #  postgres-24:
+        #    ansible_host: 10.10.0.24
+        #    ansible_user: ubuntu
+         postgres-112:
+           ansible_host: 10.202.47.112
+           ansible_user: ubuntu
+    # MongoDB servers
+    mongodb_servers:
+       hosts:
+         mongodb-112:
+           ansible_host: 10.202.47.112
+           ansible_user: ubuntu

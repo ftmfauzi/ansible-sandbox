@@ -1,0 +1,5 @@
+- name: Install Postgres Exporter
+  hosts: postgres_servers
+  become: yes
+  roles:
+    - postgres_exporter

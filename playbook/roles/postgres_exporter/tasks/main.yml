@@ -1,0 +1,83 @@
+- name: Set Postgres Exporter version and arch based on OS
+  set_fact:
+    version: "0.17.1"
+    arch: "linux-amd64"
+    # arch: "{{ 'linux-amd64' if ansible_os_family == 'Debian' else 'linux-arm64' }}"
+
+- name: Set systemd path based on OS
+  set_fact:
+    systemd_path: "{{ '/etc/systemd/system/' if ansible_os_family == 'Debian' else '/usr/lib/systemd/system/' }}"
+
+- name: Create Postgres Exporter user
+  user:
+    name: postgres_exporter
+    system: yes
+    shell: /sbin/nologin
+    create_home: no
+
+- name: Create Postgres Exporter working directory
+  file:
+    path: /etc/postgres_exporter
+    state: directory
+    owner: postgres_exporter
+    group: postgres_exporter
+
+- name: Download and extract Postgres Exporter
+  get_url:
+    url: "https://github.com/prometheus-community/postgres_exporter/releases/download/v{{version}}/postgres_exporter-{{version}}.{{ arch }}.tar.gz"
+    dest: "/tmp/postgres_exporter-{{version}}.{{ arch }}.tar.gz"
+
+- name: Extract Postgres Exporter archive
+  unarchive:
+    src: "/tmp/postgres_exporter-{{version}}.{{ arch }}.tar.gz"
+    dest: "/usr/local/bin/"
+    remote_src: yes
+    extra_opts: [--strip-components=1]
+
+- name: Copy Postgres Exporter systemd service file
+  copy:
+    src: postgres_exporter.service
+    dest: "{{ systemd_path }}/postgres_exporter.service"
+    owner: postgres_exporter
+    group: postgres_exporter
+    mode: '0644'
+
+- name: Copy Postgres Exporter ENV file
+  copy:
+    src: postgres_exporter.env
+    dest: /etc/postgres_exporter/postgres_exporter.env
+    owner: postgres_exporter
+    group: postgres_exporter
+    mode: '0644'
+
+- name: Copy Postgres Exporter config file
+  copy:
+    src: postgres_exporter.yml
+    dest: /etc/postgres_exporter/postgres_exporter.yml
+    owner: postgres_exporter
+    group: postgres_exporter
+    mode: '0644'
+
+## only postgresql old version | 9.6
+- name: Copy Postgres Exporter query.yml file
+  copy:
+    src: query.yml
+    dest: /etc/postgres_exporter/query.yml
+    owner: postgres_exporter
+    group: postgres_exporter
+    mode: '0644'
+    
+- name: Reload systemd and enable Postgres Exporter service
+  systemd:
+    daemon_reload: yes
+    name: postgres_exporter
+    enabled: yes
+    state: started
+
+- name: Verify Postgres Exporter is running
+  uri:
+    url: http://localhost:9187/metrics
+    method: GET
+    status_code: 200
+  register: postgres_exporter_status
+  ignore_errors: yes
